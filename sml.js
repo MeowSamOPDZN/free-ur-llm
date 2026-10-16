@@ -38,14 +38,14 @@ function layerNorm(x, w, b, out, eps = 1e-5) {
   return out;
 }
 
-// exact gelu via erf approximation (Abramowitz & Stegun 7.1.26)
+// exact gelu: 0.5 * x * (1 + erf(x / sqrt(2))), erf via A&S 7.1.26
 function gelu(x) {
-  const c = 0.7978845608028654; // sqrt(2/pi)
-  const ax = Math.abs(x);
-  const t = 1 / (1 + 0.3275911 * ax);
+  const z = x / Math.SQRT2;
+  const az = Math.abs(z);
+  const t = 1 / (1 + 0.3275911 * az);
   const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
-    - 0.284496736) * t + 0.254829592) * t * Math.exp(-ax * ax);
-  const erf = x < 0 ? -y : y;
+    - 0.284496736) * t + 0.254829592) * t * Math.exp(-az * az);
+  const erf = z < 0 ? -y : y;
   return 0.5 * x * (1 + erf);
 }
 
@@ -459,6 +459,16 @@ class FreeUrLLM {
     return this.vocabSet ? this.vocabSet.has(word.toLowerCase()) : false;
   }
 
+  // The tiny neural net is charming but glitchy — only let it speak when its
+  // output is mostly real English words. Otherwise fall back gracefully.
+  _neuralLooksOk(text) {
+    const words = text.toLowerCase().match(/[a-z']+/g);
+    if (!words || words.length < 3) return false;
+    let known = 0;
+    for (const w of words) if (this.isKnownWord(w)) known++;
+    return known / words.length >= 0.5;
+  }
+
   respond(rawText) {
     const text = rawText.trim();
     if (!text) return { reply: "Say something! I'm listening.", source: "intent:empty" };
@@ -492,13 +502,14 @@ class FreeUrLLM {
       return { reply: `Hmm, "${bare}" isn't in my dictionary of ${this.wordCount.toLocaleString()} English words. Did you just invent a word?`, source: "intent:wordcheck" };
     }
 
-    // neural fallback
-    if (this.netReady) {
+    // neural fallback: only for short chit-chat, and only if the output
+    // passes the real-words quality gate
+    if (this.netReady && t.split(/\s+/).length <= 12) {
       try {
         const prompt = "user: " + t.slice(0, 200) + "\nbot:";
-        let gen = this.net.generate(prompt, 110, 0.9, 40);
+        let gen = this.net.generate(prompt, 110, 0.75, 30);
         gen = gen.replace(/\s+/g, " ").trim();
-        if (gen.length >= 3 && /[a-z]/i.test(gen)) {
+        if (gen.length >= 3 && this._neuralLooksOk(gen)) {
           gen = gen.charAt(0).toUpperCase() + gen.slice(1);
           gen = gen.replace(/([.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
           return { reply: gen, source: "neural" };
