@@ -378,7 +378,7 @@ const INTENTS = [
       "I'm tiny — just a few hundred thousand parameters in a small JSON file. And yes, I'm open source! The repo has the training code and corpus, so you can train your own.",
     ]},
   { name: "nameorigin", test: (t) => /why are you called/.test(t),
-    replies: ["Because I'm free, and I'm your LLM! Get it? Free... your... LLM."],
+    replies: ["Because I'm free, and I'm your LLM! Get it? Free... your... LLM."]},
   { name: "compliment", test: (t) =>
       /(you('| a)re (awesome|cool|smart|funny|great|the best)|i like you|you are my)/.test(t),
     replies: [
@@ -390,7 +390,7 @@ const INTENTS = [
       /(i('| a)m (sad|bored|tired|happy|excited|good|fine|great|chilling)|i feel)/.test(t),
     replies: null }, // handled dynamically
   { name: "laugh", test: (t) => /^(l+o+l+|haha+|lmao|hehe+|😂)/.test(t),
-    replies: ["Haha! Glad I could make you laugh.", "Hehe! Laughter is the best.", "Hahaha! That good, huh?"],
+    replies: ["Haha! Glad I could make you laugh.", "Hehe! Laughter is the best.", "Hahaha! That good, huh?"]},
   { name: "short", test: (t) =>
       /^(yes|yeah|yep|yup|no|nope|nah|maybe|ok|okay|sure|wow|nice|cool|really|interesting|lol)\b/.test(t) && t.length < 14,
     replies: [
