@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeUr LLM — a tiny AI built with just code</title>
+<meta name="description" content="FreeUr LLM (SML-1): a small language model built with just code. Runs 100% in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07070c;
+    --panel: rgba(255, 255, 255, 0.04);
+    --border: rgba(255, 255, 255, 0.09);
+    --text: #f2f2f7;
+    --muted: #9a9ab0;
+    --grad: linear-gradient(135deg, #8b5cf6, #22d3ee);
+    --grad-soft: linear-gradient(135deg, rgba(139, 92, 246, .16), rgba(34, 211, 238, .10));
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* ambient background */
+  .orb { position: fixed; border-radius: 50%; filter: blur(110px); opacity: .35; pointer-events: none; z-index: 0; }
+  .orb.a { width: 480px; height: 480px; background: #6d28d9; top: -160px; left: -120px; animation: drift 22s ease-in-out infinite alternate; }
+  .orb.b { width: 420px; height: 420px; background: #0e7490; bottom: -160px; right: -100px; animation: drift 26s ease-in-out infinite alternate-reverse; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px, 40px) scale(1.12); } }
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(rgba(255,255,255,.055) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 75%);
+  }
+
+  /* boot overlay */
+  #boot {
+    position: fixed; inset: 0; z-index: 50; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    transition: opacity .6s ease;
+  }
+  #boot.done { opacity: 0; pointer-events: none; }
+  .boot-logo {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 42px; letter-spacing: -1px;
+    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .boot-sub { color: var(--muted); font-size: 14px; }
+  .boot-bar { width: 240px; height: 5px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .boot-fill { height: 100%; width: 0%; border-radius: 99px; background: var(--grad); transition: width .3s ease; }
+  .boot-status { color: var(--muted); font-size: 13px; min-height: 20px; }
+
+  /* layout */
+  .wrap { position: relative; z-index: 1; width: 100%; max-width: 780px; height: 100dvh; display: flex; flex-direction: column; padding: 0 18px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 20px 4px 14px; }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -.5px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tag { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .pill {
+    font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 99px;
+    border: 1px solid var(--border); background: var(--grad-soft); color: #d9d2ff;
+    display: flex; align-items: center; gap: 7px; white-space: nowrap;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 10px #34d399; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+
+  #chat { flex: 1; overflow-y: auto; padding: 10px 4px 16px; display: flex; flex-direction: column; gap: 14px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
+  #chat::-webkit-scrollbar { width: 6px; }
+  #chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 99px; }
+
+  .msg { display: flex; gap: 10px; max-width: 88%; animation: rise .28s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    background: var(--panel); border: 1px solid var(--border);
+  }
+  .msg.user .avatar { background: var(--grad); border: none; }
+  .bubble {
+    padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.55;
+    background: var(--panel); border: 1px solid var(--border);
+    border-top-left-radius: 6px; word-wrap: break-word;
+  }
+  .msg.user .bubble { background: var(--grad); border: none; border-top-left-radius: 18px; border-top-right-radius: 6px; font-weight: 500; }
+  .src { font-size: 10.5px; color: var(--muted); margin-top: 6px; opacity: .75; letter-spacing: .3px; }
+  .typing { display: flex; gap: 5px; padding: 16px 18px; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; } .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+
+  #chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 4px 12px; scrollbar-width: none; }
+  #chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; font-size: 13px; padding: 8px 15px; border-radius: 99px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--panel); color: #cfcfe0;
+    transition: all .18s ease; font-family: inherit;
+  }
+  .chip:hover { border-color: rgba(139,92,246,.6); background: var(--grad-soft); color: #fff; transform: translateY(-1px); }
+
+  #inputbar {
+    display: flex; gap: 10px; padding: 10px; margin-bottom: 10px;
+    background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 20px;
+    backdrop-filter: blur(12px);
+  }
+  #inputbar:focus-within { border-color: rgba(139,92,246,.55); box-shadow: 0 0 0 3px rgba(139,92,246,.12); }
+  #msg { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 15px; padding: 8px 10px; font-family: inherit; }
+  #msg::placeholder { color: var(--muted); }
+  #send {
+    width: 44px; height: 44px; border-radius: 14px; border: none; cursor: pointer; flex-shrink: 0;
+    background: var(--grad); color: #fff; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; transition: transform .15s ease;
+  }
+  #send:hover { transform: scale(1.06); } #send:active { transform: scale(.96); }
+
+  footer { padding: 0 4px 18px; text-align: center; }
+  .stats { font-size: 12px; color: var(--muted); display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; align-items: center; }
+  .stats b { color: #d9d2ff; font-weight: 600; }
+  details.how { margin-top: 10px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  details.how summary { outline: none; }
+  details.how p { margin-top: 8px; line-height: 1.7; max-width: 620px; margin-inline: auto; cursor: default; }
+  details.how code { background: rgba(255,255,255,.07); padding: 1px 6px; border-radius: 6px; font-size: 11.5px; }
+  .credit { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .credit b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  @media (max-width: 560px) {
+    .boot-logo { font-size: 34px; }
+    .msg { max-width: 94%; }
+    .tag { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="orb a"></div><div class="orb b"></div><div class="grid-overlay"></div>
+
+  <div id="boot">
+    <div class="boot-logo">FreeUr LLM</div>
+    <div class="boot-sub">a tiny language model built with just code</div>
+    <div class="boot-bar"><div class="boot-fill" id="bootfill"></div></div>
+    <div class="boot-status" id="bootstatus">starting...</div>
+  </div>
+
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="logo">FreeUr LLM</div>
+        <div class="tag">SML-1 · small language model · runs 100% in your browser</div>
+      </div>
+      <div class="pill"><span class="dot"></span><span id="pilltext">loading...</span></div>
+    </header>
+
+    <div id="chat"></div>
+
+    <div id="chips">
+      <button class="chip">Hi</button>
+      <button class="chip">Bro</button>
+      <button class="chip">How are you?</button>
+      <button class="chip">Tell me a joke</button>
+      <button class="chip">Tell me a fun fact</button>
+      <button class="chip">Is "serendipity" a word?</button>
+      <button class="chip">Who made you?</button>
+    </div>
+
+    <form id="inputbar">
+      <input id="msg" type="text" placeholder="Say hi, ask anything..." autocomplete="off" maxlength="300">
+      <button id="send" type="submit" aria-label="Send">➤</button>
+    </form>
+
+    <footer>
+      <div class="stats" id="stats"><span>warming up the tiny brain...</span></div>
+      <details class="how">
+        <summary>how does this work?</summary>
+        <p>
+          <b style="color:#d9d2ff">FreeUr LLM</b> has two brains. An <b style="color:#d9d2ff">intent brain</b>
+          understands greetings like "hi", "bro" and "how are you?" and reacts instantly.
+          A <b style="color:#d9d2ff">neural brain</b> — a tiny character-level transformer
+          (<span id="paramcount">~350K</span> parameters) trained from scratch with PyTorch on
+          4,000+ chat conversations — generates replies for everything else.
+          It knows <b style="color:#d9d2ff">every English word</b> from a built-in dictionary
+          (<code>words.txt</code>, <span id="wordcount2">466,550</span> words).
+          Everything runs locally in this page — no servers, no tracking.
+          Code &amp; training scripts are open source on GitHub.
+        </p>
+      </details>
+      <div class="credit">Made by <b>MeowSamOP DZN</b></div>
+    </footer>
+  </div>
+
+<script src="sml.js"></script>
+<script>
+(function () {
+  "use strict";
+  const chat = document.getElementById("chat");
+  const form = document.getElementById("inputbar");
+  const input = document.getElementById("msg");
+  const boot = document.getElementById("boot");
+  const bootfill = document.getElementById("bootfill");
+  const bootstatus = document.getElementById("bootstatus");
+  const pilltext = document.getElementById("pilltext");
+
+  const engine = new FreeUrLLM();
+
+  function scrollDown() { chat.scrollTop = chat.scrollHeight; }
+
+  function addMsg(who, html, srcLabel) {
+    const wrap = document.createElement("div");
+    wrap.className = "msg " + who;
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = who === "user" ? "🧑" : "✨";
+    const body = document.createElement("div");
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = html;
+    body.appendChild(bubble);
+    if (srcLabel) {
+      const src = document.createElement("div");
+      src.className = "src";
+      src.textContent = srcLabel;
+      body.appendChild(src);
+    }
+    wrap.appendChild(avatar);
+    wrap.appendChild(body);
+    chat.appendChild(wrap);
+    scrollDown();
+    return bubble;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function typeInto(bubble, text, done) {
+    let i = 0;
+    const speed = text.length > 120 ? 6 : 14;
+    (function tick() {
+      i += 2;
+      bubble.innerHTML = escapeHtml(text.slice(0, i));
+      scrollDown();
+      if (i < text.length) setTimeout(tick, speed);
+      else if (done) done();
+    })();
+  }
+
+  let busy = false;
+  function send(text) {
+    text = (text || "").trim();
+    if (!text || busy) return;
+    busy = true;
+    addMsg("user", escapeHtml(text));
+    input.value = "";
+    const typingBubble = addMsg("bot", '<div class="typing"><span></span><span></span><span></span></div>');
+    const thinkTime = 500 + Math.random() * 700;
+    setTimeout(() => {
+      let out;
+      try { out = engine.respond(text); }
+      catch (e) { out = { reply: "Oops, my brain glitched for a second. Try again?", source: "error" }; }
+      const label = out.source === "neural" ? "🧠 neural brain" :
+        out.source.indexOf("intent:wordcheck") === 0 ? "📖 dictionary lookup" :
+        out.source.indexOf("intent") === 0 ? "⚡ instant reply" : "";
+      typingBubble.innerHTML = "";
+      // attach source label under bubble
+      const body = typingBubble.parentElement;
+      typeInto(typingBubble, out.reply, () => {
+        if (label && !body.querySelector(".src")) {
+          const s = document.createElement("div");
+          s.className = "src"; s.textContent = label;
+          body.appendChild(s); scrollDown();
+        }
+        busy = false;
+      });
+    }, thinkTime);
+  }
+
+  form.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
+  document.getElementById("chips").addEventListener("click", (e) => {
+    if (e.target.classList.contains("chip")) send(e.target.textContent);
+  });
+
+  // boot
+  engine.init((p, msg) => {
+    bootfill.style.width = p + "%";
+    bootstatus.textContent = msg;
+  }).then(() => {
+    const params = engine.net ? engine.net.nParams : 0;
+    const words = engine.wordCount || 466550;
+    document.getElementById("stats").innerHTML =
+      "<span><b>" + words.toLocaleString() + "</b> words</span><span>·</span>" +
+      "<span><b>" + (params ? Math.round(params / 1000) + "K" : "~350K") + "</b> params</span><span>·</span>" +
+      "<span><b>100%</b> in-browser</span><span>·</span><span>open source</span>";
+    const pc = document.getElementById("paramcount");
+    if (pc && params) pc.textContent = "~" + Math.round(params / 1000) + "K";
+    const wc2 = document.getElementById("wordcount2");
+    if (wc2) wc2.textContent = words.toLocaleString();
+    pilltext.textContent = engine.netReady ? "online · tiny brain ready" : "online · instant replies";
+    boot.classList.add("done");
+    setTimeout(() => {
+      const b = addMsg("bot", "");
+      typeInto(b, "Hey! I'm FreeUr LLM — a tiny AI built with just code. I know every English word in my dictionary. Say hi, call me bro, or ask me anything!");
+    }, 450);
+    input.focus();
+  }).catch(() => {
+    bootstatus.textContent = "couldn't load — check your connection and refresh";
+  });
+})();
+</script>
+</body>
+</html>
