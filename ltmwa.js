@@ -297,11 +297,17 @@ const CODE_JS_HELLO = 'console.log("hello world");';
 
 const INTENTS = [
   { name: "code_generic", test: (t) =>
-      /(write|make|generate|give me).*(code|program|script|function)|code (please|for me)|\bcode\b.*(now|pls)/.test(t) &&
+      /(write|make|generate|give me).*(code|program|script|function)|code (please|for me)|\bcode\b.*(now|pls|make|what|should|can|idea)/.test(t) &&
       !/(hello world|add|factorial|fibonacci|fizzbuzz|even|odd|html|prime|palindrome|reverse|sort)/.test(t),
     replies: [
       "Sure! What should I code? Try: \"python hello world\", \"fibonacci in python\", \"even or odd in python\", or \"html boilerplate\".",
       "Let's build something! Tell me what you need — e.g. \"python hello world\", \"factorial in python\", \"html boilerplate\".",
+    ]},
+  { name: "make_ideas", test: (t) =>
+      /(what should we (make|build)|what (can|should) (we|i) (make|build|create)|give me (project |coding )?ideas|project ideas|ideas for (a |the )?(project|game|app|website))/.test(t),
+    replies: [
+      "Ooh, let's build something! How about: a number guessing game, a calculator, or a password generator? Just say the word and I'll write the code!",
+      "Ideas incoming: 1) rock-paper-scissors game, 2) a todo list app, 3) a chatbot (like me!). Which one sounds fun? I'll code it up.",
     ]},
   { name: "code_hello", test: (t) => /(hello world|hello)/.test(t) && /(python|py\b)/.test(t),
     replies: [CODE_HELLO_PY] },
