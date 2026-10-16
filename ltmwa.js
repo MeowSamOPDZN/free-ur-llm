@@ -65,8 +65,10 @@ function ltmwaTokenize(text) {
   text = text.toLowerCase()
     .replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
     .replace(/[—–]/g, "-").replace(/…/g, "...")
+    // drop non-ascii letters (python's \w swallows them, so they vanish there too)
+    .replace(/[^\x00-\x7F]/g, (c) => /\p{L}/u.test(c) ? " " : c)
     .replace(/\n/g, " <n> ");
-  return text.match(/<n>|[a-z]+(?:'[a-z]+)?|[0-9]+|[^\s\w]/g) || [];
+  return text.match(/<n>|[a-z]+(?:'[a-z]+)?|[0-9]+|[^\s\w]/gu) || [];
 }
 
 function ltmwaDetok(toks) {
