@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FreeUr LLM — a tiny AI built with just code</title>
-<meta name="description" content="FreeUr LLM (SML-1): a small language model built with just code. Runs 100% in your browser.">
+<title>LTMWA-1 — Large Text Model without API</title>
+<meta name="description" content="LTMWA-1: the world's first Large Text Model without API. Runs 100% in your browser. Zero APIs.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #07070c;
@@ -30,7 +30,6 @@
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
   }
-  /* ambient background */
   .orb { position: fixed; border-radius: 50%; filter: blur(110px); opacity: .35; pointer-events: none; z-index: 0; }
   .orb.a { width: 480px; height: 480px; background: #6d28d9; top: -160px; left: -120px; animation: drift 22s ease-in-out infinite alternate; }
   .orb.b { width: 420px; height: 420px; background: #0e7490; bottom: -160px; right: -100px; animation: drift 26s ease-in-out infinite alternate-reverse; }
@@ -42,7 +41,6 @@
     mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 75%);
   }
 
-  /* boot overlay */
   #boot {
     position: fixed; inset: 0; z-index: 50; background: var(--bg);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
@@ -50,7 +48,7 @@
   }
   #boot.done { opacity: 0; pointer-events: none; }
   .boot-logo {
-    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 42px; letter-spacing: -1px;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; letter-spacing: -1px;
     background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .boot-sub { color: var(--muted); font-size: 14px; }
@@ -58,10 +56,9 @@
   .boot-fill { height: 100%; width: 0%; border-radius: 99px; background: var(--grad); transition: width .3s ease; }
   .boot-status { color: var(--muted); font-size: 13px; min-height: 20px; }
 
-  /* layout */
   .wrap { position: relative; z-index: 1; width: 100%; max-width: 780px; height: 100dvh; display: flex; flex-direction: column; padding: 0 18px; }
   header { display: flex; align-items: center; justify-content: space-between; padding: 20px 4px 14px; }
-  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -.5px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -.5px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .tag { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .pill {
     font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 99px;
@@ -90,6 +87,10 @@
     border-top-left-radius: 6px; word-wrap: break-word;
   }
   .msg.user .bubble { background: var(--grad); border: none; border-top-left-radius: 18px; border-top-right-radius: 6px; font-weight: 500; }
+  .bubble.code {
+    font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.6;
+    white-space: pre-wrap; background: rgba(0,0,0,.45); border-color: rgba(139,92,246,.35);
+  }
   .src { font-size: 10.5px; color: var(--muted); margin-top: 6px; opacity: .75; letter-spacing: .3px; }
   .typing { display: flex; gap: 5px; padding: 16px 18px; }
   .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
@@ -131,7 +132,7 @@
   .credit b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
   @media (max-width: 560px) {
-    .boot-logo { font-size: 34px; }
+    .boot-logo { font-size: 36px; }
     .msg { max-width: 94%; }
     .tag { display: none; }
   }
@@ -141,8 +142,8 @@
   <div class="orb a"></div><div class="orb b"></div><div class="grid-overlay"></div>
 
   <div id="boot">
-    <div class="boot-logo">FreeUr LLM</div>
-    <div class="boot-sub">a tiny language model built with just code</div>
+    <div class="boot-logo">LTMWA</div>
+    <div class="boot-sub">Large Text Model without API · the world's first LTMWA</div>
     <div class="boot-bar"><div class="boot-fill" id="bootfill"></div></div>
     <div class="boot-status" id="bootstatus">starting...</div>
   </div>
@@ -150,8 +151,8 @@
   <div class="wrap">
     <header>
       <div>
-        <div class="logo">FreeUr LLM</div>
-        <div class="tag">SML-1 · small language model · runs 100% in your browser</div>
+        <div class="logo">LTMWA</div>
+        <div class="tag">LTMWA-1 · Large Text Model without API · zero APIs, 100% in-browser</div>
       </div>
       <div class="pill"><span class="dot"></span><span id="pilltext">loading...</span></div>
     </header>
@@ -162,14 +163,14 @@
       <button class="chip">Hi</button>
       <button class="chip">Bro</button>
       <button class="chip">How are you?</button>
-      <button class="chip">Tell me a joke</button>
-      <button class="chip">Tell me a fun fact</button>
-      <button class="chip">Is "serendipity" a word?</button>
+      <button class="chip">Write python hello world</button>
+      <button class="chip">Tell me a story</button>
+      <button class="chip">Is "sybau" a word?</button>
       <button class="chip">Who made you?</button>
     </div>
 
     <form id="inputbar">
-      <input id="msg" type="text" placeholder="Say hi, ask anything..." autocomplete="off" maxlength="300">
+      <input id="msg" type="text" placeholder="Say hi, ask for code, or anything..." autocomplete="off" maxlength="300">
       <button id="send" type="submit" aria-label="Send">➤</button>
     </form>
 
@@ -178,22 +179,23 @@
       <details class="how">
         <summary>how does this work?</summary>
         <p>
-          <b style="color:#d9d2ff">FreeUr LLM</b> has two brains. An <b style="color:#d9d2ff">intent brain</b>
-          understands greetings like "hi", "bro" and "how are you?" and reacts instantly.
-          A <b style="color:#d9d2ff">neural brain</b> — a tiny character-level transformer
-          (<span id="paramcount">~350K</span> parameters) trained from scratch with PyTorch on
-          4,000+ chat conversations — generates replies for everything else.
-          It knows <b style="color:#d9d2ff">every English word</b> from a built-in dictionary
-          (<code>words.txt</code>, <span id="wordcount2">466,550</span> words).
-          Everything runs locally in this page — no servers, no tracking.
-          Code &amp; training scripts are open source on GitHub.
+          <b style="color:#d9d2ff">LTMWA-1</b> (Large Text Model <i>without</i> API) has two brains.
+          An <b style="color:#d9d2ff">intent brain</b> understands greetings ("hi", "bro", "how are you?"),
+          writes code instantly, and reacts to slang.
+          A <b style="color:#d9d2ff">neural brain</b> — a word-level transformer
+          (<span id="paramcount">~3.4M</span> parameters, int8) trained from scratch on
+          thousands of stories, chats and code examples — generates whole sentences for everything else.
+          It knows <b style="color:#d9d2ff">every English word</b> plus modern slang
+          (<code>words.txt</code> + <code>slang.txt</code>).
+          No API keys. No servers. Everything runs locally in this page.
+          Code &amp; training scripts are open source on GitHub — train your own LTMWA.
         </p>
       </details>
       <div class="credit">Made by <b>MeowSamOP DZN</b></div>
     </footer>
   </div>
 
-<script src="sml.js"></script>
+<script src="ltmwa.js"></script>
 <script>
 (function () {
   "use strict";
@@ -205,11 +207,11 @@
   const bootstatus = document.getElementById("bootstatus");
   const pilltext = document.getElementById("pilltext");
 
-  const engine = new FreeUrLLM();
+  const engine = new LTMWA();
 
   function scrollDown() { chat.scrollTop = chat.scrollHeight; }
 
-  function addMsg(who, html, srcLabel) {
+  function addMsg(who, html, srcLabel, isCode) {
     const wrap = document.createElement("div");
     wrap.className = "msg " + who;
     const avatar = document.createElement("div");
@@ -217,7 +219,7 @@
     avatar.textContent = who === "user" ? "🧑" : "✨";
     const body = document.createElement("div");
     const bubble = document.createElement("div");
-    bubble.className = "bubble";
+    bubble.className = "bubble" + (isCode ? " code" : "");
     bubble.innerHTML = html;
     body.appendChild(bubble);
     if (srcLabel) {
@@ -237,15 +239,29 @@
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  function typeInto(bubble, text, done) {
+  function renderText(bubble, text, isCode) {
+    let html = escapeHtml(text);
+    if (isCode) {
+      bubble.classList.add("code");
+    } else {
+      html = html.replace(/\n/g, "<br>");
+    }
+    bubble.innerHTML = html;
+  }
+
+  function typeInto(bubble, text, isCode, done) {
     let i = 0;
-    const speed = text.length > 120 ? 6 : 14;
+    const speed = isCode ? 4 : (text.length > 150 ? 8 : 16);
     (function tick() {
       i += 2;
-      bubble.innerHTML = escapeHtml(text.slice(0, i));
+      const partial = text.slice(0, i);
+      let html = escapeHtml(partial);
+      if (!isCode) html = html.replace(/\n/g, "<br>");
+      else bubble.classList.add("code");
+      bubble.innerHTML = html;
       scrollDown();
       if (i < text.length) setTimeout(tick, speed);
-      else if (done) done();
+      else { renderText(bubble, text, isCode); scrollDown(); if (done) done(); }
     })();
   }
 
@@ -257,18 +273,18 @@
     addMsg("user", escapeHtml(text));
     input.value = "";
     const typingBubble = addMsg("bot", '<div class="typing"><span></span><span></span><span></span></div>');
-    const thinkTime = 500 + Math.random() * 700;
+    const thinkTime = 450 + Math.random() * 600;
     setTimeout(() => {
       let out;
       try { out = engine.respond(text); }
-      catch (e) { out = { reply: "Oops, my brain glitched for a second. Try again?", source: "error" }; }
-      const label = out.source === "neural" ? "🧠 neural brain" :
+      catch (e) { out = { reply: "Oops, my brain glitched for a second. Try again?", source: "error", code: false }; }
+      const label = out.source === "neural" ? "🧠 neural brain · whole sentence" :
         out.source.indexOf("intent:wordcheck") === 0 ? "📖 dictionary lookup" :
+        out.source.indexOf("intent:code") === 0 ? "💻 code mode · instant" :
         out.source.indexOf("intent") === 0 ? "⚡ instant reply" : "";
       typingBubble.innerHTML = "";
-      // attach source label under bubble
       const body = typingBubble.parentElement;
-      typeInto(typingBubble, out.reply, () => {
+      typeInto(typingBubble, out.reply, out.code, () => {
         if (label && !body.querySelector(".src")) {
           const s = document.createElement("div");
           s.className = "src"; s.textContent = label;
@@ -284,26 +300,23 @@
     if (e.target.classList.contains("chip")) send(e.target.textContent);
   });
 
-  // boot
   engine.init((p, msg) => {
     bootfill.style.width = p + "%";
     bootstatus.textContent = msg;
   }).then(() => {
     const params = engine.net ? engine.net.nParams : 0;
-    const words = engine.wordCount || 466550;
+    const words = engine.wordCount || 466000;
     document.getElementById("stats").innerHTML =
-      "<span><b>" + words.toLocaleString() + "</b> words</span><span>·</span>" +
-      "<span><b>" + (params ? Math.round(params / 1000) + "K" : "~350K") + "</b> params</span><span>·</span>" +
-      "<span><b>100%</b> in-browser</span><span>·</span><span>open source</span>";
+      "<span><b>" + words.toLocaleString() + "</b> words + slang</span><span>·</span>" +
+      "<span><b>" + (params ? (params / 1e6).toFixed(1) + "M" : "~3.4M") + "</b> params</span><span>·</span>" +
+      "<span><b>0</b> APIs</span><span>·</span><span>100% in-browser</span>";
     const pc = document.getElementById("paramcount");
-    if (pc && params) pc.textContent = "~" + Math.round(params / 1000) + "K";
-    const wc2 = document.getElementById("wordcount2");
-    if (wc2) wc2.textContent = words.toLocaleString();
-    pilltext.textContent = engine.netReady ? "online · tiny brain ready" : "online · instant replies";
+    if (pc && params) pc.textContent = "~" + (params / 1e6).toFixed(1) + "M";
+    pilltext.textContent = engine.netReady ? "online · LTMWA-1 ready · 0 APIs" : "online · instant replies";
     boot.classList.add("done");
     setTimeout(() => {
       const b = addMsg("bot", "");
-      typeInto(b, "Hey! I'm FreeUr LLM — a tiny AI built with just code. I know every English word in my dictionary. Say hi, call me bro, or ask me anything!");
+      typeInto(b, "Hey! I'm LTMWA-1 — the world's first Large Text Model without API. I generate whole sentences, I write code, and I know every English word plus slang like sybau. No API keys, no servers — just code. What's up?", false);
     }, 450);
     input.focus();
   }).catch(() => {
