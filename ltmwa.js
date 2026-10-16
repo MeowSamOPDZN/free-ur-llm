@@ -295,6 +295,21 @@ const CODE_EVENODD_PY = 'n = 7\nif n % 2 == 0:\n    print("even")\nelse:\n    pr
 const CODE_HTML = '<!doctype html>\n<html>\n<head>\n<title>my page</title>\n</head>\n<body>\n<h1>hello</h1>\n</body>\n</html>';
 const CODE_JS_HELLO = 'console.log("hello world");';
 
+const DEFINITIONS = [
+  [/python/, "Python is a programming language — easy to read, great for beginners and AI. I can write it! Try \"python hello world\"."],
+  [/javascript|\bjs\b/, "JavaScript makes websites interactive — it runs right in your browser. This page is full of it!"],
+  [/html/, "HTML is the skeleton of web pages — tags like <p> and <h1> structure everything you see."],
+  [/css/, "CSS styles web pages — colors, layouts, fonts. It's why this chat looks aesthetic."],
+  [/(artificial intelligence|\bai\b)/, "Artificial Intelligence is when computers do smart things — like chatting! I'm a tiny example of it."],
+  [/robot/, "A robot is a machine that does tasks, sometimes with AI brains. I'm AI without the body!"],
+  [/api/, "API stands for Application Programming Interface — it's how apps talk to servers over the internet. I don't need any!"],
+  [/computer/, "A computer is a machine that runs code — like the one you're using right now to talk to me."],
+  [/internet/, "The internet connects computers worldwide. Fun fact: I work even without it, once this page loads!"],
+  [/coding|programming/, "Coding is telling computers what to do, step by step. Want to try? Ask me for some Python code!"],
+  [/minecraft/, "Minecraft is a block-building game — creative mode is basically coding with cubes!"],
+  [/roblox/, "Roblox is a platform full of games made by players, mostly coded in Luau. My creator made a Roblox AI plugin!"],
+];
+
 const INTENTS = [
   { name: "code_generic", test: (t) =>
       /(write|make|generate|give me).*(code|program|script|function)|code (please|for me)|\bcode\b.*(now|pls|make|what|should|can|idea)/.test(t) &&
@@ -329,6 +344,15 @@ const INTENTS = [
     replies: ['def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, n):\n        if n % i == 0:\n            return False\n    return True'] },
   { name: "code_reverse", test: (t) => /reverse.*string|string.*reverse/.test(t),
     replies: ['text = "hello"\nprint(text[::-1])'] },
+  { name: "math", test: (t) =>
+      /(what is|whats|calculate|compute|solve|how much is)\s*[\d\s+\-*/().^%]+\s*\??$/.test(t) &&
+      /\d/.test(t) && !/(your name|ltmwa|mnai)/.test(t),
+    replies: null },
+  { name: "understand", test: (t) =>
+      /(do you understand|understand me|do you get (it|me)|are you smart|how smart are you)/.test(t),
+    replies: [
+      "I understand greetings, questions, code requests, math, and over 466,000 words! My neural brain is learning sentences right now — it's training as we speak. Try: say hi, ask 'what is 12*8', or 'write python hello world'.",
+    ]},
   { name: "howru", test: (t) =>
       /(how are you|how r u|\bhru\b|how('| i)s it going|how are u|what('| i)s up|how you doing|how('| ha)ve you been|how is it going|how do you do|you good\??$|how('| i)s life)/.test(t),
     replies: [
@@ -369,6 +393,8 @@ const INTENTS = [
       "I'm called LTMWA-1 — the first large text model without API in the world!",
       "LTMWA stands for Large Text Model without API. That's me!",
     ]},
+  { name: "define", test: (t) => /what (is|are) /.test(t),
+    replies: null },
   { name: "ltmwa_meaning", test: (t) => /(what does ltmwa mean|ltmwa (stands|meaning)|expand ltmwa)/.test(t),
     replies: [
       "LTMWA means Large Text Model without API! No keys, no servers, no cost — just a brain in your browser.",
@@ -576,7 +602,7 @@ class LTMWA {
   }
 
   normalize(text) {
-    return text.toLowerCase().replace(/[^\p{L}\p{N}\s'?!.,-]/gu, "").trim();
+    return text.toLowerCase().replace(/[^\p{L}\p{N}\s'?!.,+*/()^%-]/gu, "").trim();
   }
 
   isKnownWord(word) {
@@ -612,6 +638,27 @@ class LTMWA {
         }
         if (intent.name === "mood") {
           return { reply: moodReply(t), source: "intent:mood", code: false };
+        }
+        if (intent.name === "math") {
+          const m = t.match(/(?:what is|whats|calculate|compute|solve|how much is)\s*([\d\s+\-*/().^%]+)\s*\??$/);
+          if (m) {
+            const expr = m[1].trim().replace(/\^/g, "**");
+            if (/^[\d\s+\-*/().%*]+$/.test(expr) && /\d/.test(expr)) {
+              try {
+                const val = Function('"use strict"; return (' + expr + ")")();
+                if (typeof val === "number" && isFinite(val)) {
+                  const pretty = Math.round(val * 1e10) / 1e10;
+                  return { reply: `${expr.replace(/\*\*/g, "^")} = ${pretty}`, source: "intent:math", code: false };
+                }
+              } catch (e) { /* fall through */ }
+            }
+          }
+        }
+        if (intent.name === "define") {
+          for (const [re, def] of DEFINITIONS) {
+            if (re.test(t)) return { reply: def, source: "intent:define", code: false };
+          }
+          return { reply: "Hmm, I don't have a definition for that yet! My dictionary knows the word, but I haven't learned what it means. Ask me about python, AI, robots, or the internet!", source: "intent:define", code: false };
         }
         if (intent.name === "story") {
           if (this.netReady) {
